@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    ports: ["8000:8000"]
+    env_file: .env
+    environment:
+      # inside the compose network the DB host is the service name, not localhost
+      DATABASE_URL: postgresql+asyncpg://dodgeball:dodgeball@postgres:5432/dodgeball
+    command: uv run uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./app:/code/app # live-reload picks up local edits
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: dodgeball
+      POSTGRES_PASSWORD: dodgeball
+      POSTGRES_DB: dodgeball
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dodgeball"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

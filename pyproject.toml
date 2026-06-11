@@ -1,0 +1,76 @@
+[project]
+name = "dodgeballplus"
+version = "0.1.0"
+description = "Live scoring platform for dodgeball"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pydantic-settings>=2.7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.25",
+    "httpx>=0.28",
+    "ruff>=0.8",
+    "import-linter>=2",
+]
+
+[tool.uv]
+package = false # this is an application, not an installable library
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"] # errors, pyflakes, import-sort, bugbear, modernize
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# ---- architecture contracts (docs/architecture/module-boundaries.md) ----
+[tool.importlinter]
+root_package = "app"
+
+[[tool.importlinter.contracts]]
+name = "core is independent"
+type = "forbidden"
+source_modules = ["app.core"]
+forbidden_modules = [
+    "app.events",
+    "app.auth",
+    "app.scoring",
+    "app.delivery",
+    "app.read",
+    "app.api",
+]
+
+[[tool.importlinter.contracts]]
+name = "nothing imports api"
+type = "forbidden"
+source_modules = [
+    "app.core",
+    "app.events",
+    "app.auth",
+    "app.scoring",
+    "app.delivery",
+    "app.read",
+]
+forbidden_modules = ["app.api"]
+
+[[tool.importlinter.contracts]]
+name = "write/fan-out decoupling"
+type = "independence"
+modules = ["app.scoring", "app.delivery"]
+
+[[tool.importlinter.contracts]]
+name = "event log is encapsulated (only scoring + api may use events)"
+type = "forbidden"
+source_modules = ["app.auth", "app.read", "app.delivery"]
+forbidden_modules = ["app.events"]
