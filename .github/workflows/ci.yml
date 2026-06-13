@@ -8,11 +8,33 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dodgeball
+          POSTGRES_PASSWORD: dodgeball
+          POSTGRES_DB: dodgeball
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://dodgeball:dodgeball@localhost:5432/dodgeball
+
     steps:
-      - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v8.2.0
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - run: uv sync --frozen
       - run: uv run ruff check app tests
       - run: uv run ruff format --check app tests
       - run: uv run lint-imports
+      - run: uv run alembic upgrade head
+      - run: uv run python -m app.seed
+      - run: uv run python -m app.seed   # second run proves idempotency
       - run: uv run pytest
