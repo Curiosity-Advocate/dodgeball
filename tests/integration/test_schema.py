@@ -48,6 +48,7 @@ async def conn():
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 async def _insert_user(conn, email: str, role: str = "scorekeeper") -> str:
     result = await conn.execute(
         text("""
@@ -63,8 +64,7 @@ async def _insert_user(conn, email: str, role: str = "scorekeeper") -> str:
 async def _insert_competition(conn) -> int:
     result = await conn.execute(
         text(
-            "INSERT INTO competitions (name, level) "
-            "VALUES ('Test League', 'NATIONAL') RETURNING id"
+            "INSERT INTO competitions (name, level) VALUES ('Test League', 'NATIONAL') RETURNING id"
         ),
     )
     return result.scalar_one()
@@ -93,6 +93,7 @@ async def _insert_match(conn, comp_id: int, home_id: int, away_id: int) -> int:
 # ---------------------------------------------------------------------------
 # Constraint tests
 # ---------------------------------------------------------------------------
+
 
 async def test_email_unique_is_case_insensitive(conn):
     """citext makes email unique regardless of case."""
