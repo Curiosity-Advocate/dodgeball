@@ -14,9 +14,7 @@ from app.core.projections import MatchResult, apply, compute_standings
 from app.events.store import EventStore
 
 # match_events columns whenever we materialise an Event, in dataclass field order.
-_EVENT_COLUMNS = (
-    "id, match_id, version, type, payload, actor_id, idempotency_key, created_at"
-)
+_EVENT_COLUMNS = "id, match_id, version, type, payload, actor_id, idempotency_key, created_at"
 
 
 def _row_to_event(row) -> Event:
@@ -174,8 +172,7 @@ class PostgresEventStore(EventStore):
             )
         ).all()
         results = [
-            MatchResult(r.home_team_id, r.away_team_id, r.score_home, r.score_away)
-            for r in rows
+            MatchResult(r.home_team_id, r.away_team_id, r.score_home, r.score_away) for r in rows
         ]
 
         standings = compute_standings(competition_id, results)

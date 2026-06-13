@@ -1,6 +1,6 @@
 """Unit tests for the pure projection logic — no database."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.core.events import Event, EventType, MatchState
 from app.core.projections import MatchResult, TeamStanding, apply, compute_standings, fold
@@ -16,7 +16,7 @@ def _event(version: int, type: EventType, payload: dict | None = None) -> Event:
         type=type,
         actor_id=_ZERO_UUID,
         idempotency_key=_ZERO_UUID,
-        created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        created_at=datetime(2026, 1, 1, tzinfo=UTC),
         payload=payload or {},
     )
 

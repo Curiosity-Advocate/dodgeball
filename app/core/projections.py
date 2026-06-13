@@ -107,9 +107,7 @@ class TeamStanding:
     points: int = 0
 
 
-def compute_standings(
-    competition_id: int, results: Iterable[MatchResult]
-) -> list[TeamStanding]:
+def compute_standings(competition_id: int, results: Iterable[MatchResult]) -> list[TeamStanding]:
     """Compute a competition's standings from its finalised matches (full
     recompute, Decision 4). Pure: no I/O. Equal scores count as a draw.
     """
