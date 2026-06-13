@@ -1,0 +1,25 @@
+name: Regenerate lockfile
+
+# One-off, manually triggered: regenerates uv.lock on a runner and commits it
+# back to main, because the local machine has neither uv nor Docker. Removed
+# again once the lockfile is updated.
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv lock
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet uv.lock || (
+            git add uv.lock
+            git commit -m "chore: regenerate uv.lock with argon2-cffi"
+            git push
+          )
