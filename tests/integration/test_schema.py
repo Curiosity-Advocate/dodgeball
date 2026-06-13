@@ -13,9 +13,9 @@ import os
 import uuid
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import text
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
@@ -62,7 +62,10 @@ async def _insert_user(conn, email: str, role: str = "scorekeeper") -> str:
 
 async def _insert_competition(conn) -> int:
     result = await conn.execute(
-        text("INSERT INTO competitions (name, level) VALUES ('Test League', 'NATIONAL') RETURNING id"),
+        text(
+            "INSERT INTO competitions (name, level) "
+            "VALUES ('Test League', 'NATIONAL') RETURNING id"
+        ),
     )
     return result.scalar_one()
 
@@ -226,7 +229,9 @@ async def test_seed_data_present(conn):
     row = await conn.execute(
         text("SELECT COUNT(*) FROM users WHERE email = 'scorekeeper@demo.local'"),
     )
-    assert row.scalar_one() == 1, "Demo scorekeeper not found — did you run `uv run python -m app.seed`?"
+    assert row.scalar_one() == 1, (
+        "Demo scorekeeper not found — did you run `uv run python -m app.seed`?"
+    )
 
     row = await conn.execute(
         text("SELECT COUNT(*) FROM competitions WHERE name = 'Demo National League'"),
