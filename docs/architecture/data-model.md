@@ -178,7 +178,9 @@ CREATE TABLE standings (
 
 `match_state` is the snapshot a new viewer reads; its `version` records the event
 it is current as of, so a snapshot is self-describing (state + cursor). `standings`
-is the simple within-competition points table, recomputed on finalisation. Because
+is the simple within-competition points table, recomputed **in full** on
+finalisation from the competition's finalised matches under the rule **win = 3,
+draw = 1, loss = 0**, where equal final scores count as a draw. Because
 both are derived, they carry no special durability requirement — if lost, they are
 rebuilt by replaying `match_events` (`NFR-8`).
 
@@ -189,11 +191,16 @@ rebuilt by replaying `match_events` (`NFR-8`).
 | `match_started` | `{}` | `status` → `in_progress` |
 | `round_won_home` | `{}` | `score_home += 1`, `current_round += 1` |
 | `round_won_away` | `{}` | `score_away += 1`, `current_round += 1` |
-| `score_correction` | `{ "score_home": N, "score_away": M }` | absolute scores set to N, M |
+| `score_correction` | `{ "score_home": N, "score_away": M }` | absolute scores set to N, M; `current_round` re-derived as N + M |
 | `match_finalized` | `{}` | `status` → `final`; triggers `standings` recompute |
 
 ## Modelling notes
 
+- **`current_round` is derived.** Each round has exactly one winner, so the
+  invariant `current_round == score_home + score_away` holds after every event.
+  `round_won_*` increment a score and the round together; a `score_correction`
+  sets absolute scores and re-derives the round as their sum (it does not
+  increment). The projection fold maintains this invariant.
 - **`version` semantics.** A per-match contiguous counter. In v1.0 it is purely the
   ordering/replay cursor; the write-time `expected_version` check is **not**
   enforced (a single scorekeeper plus the idempotency key suffices). In v2.0 the
