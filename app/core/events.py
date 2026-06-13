@@ -9,10 +9,10 @@ lets the fold logic be unit-tested without a database (module-boundaries.md).
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """The five scoring events. Values mirror the match_events.type CHECK in
     data-model.md exactly, so the enum and the database agree on the strings."""
 
