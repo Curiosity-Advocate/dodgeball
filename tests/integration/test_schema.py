@@ -17,6 +17,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from app.core.db import get_engine
+from app.seed import seed
+
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 pytestmark = pytest.mark.skipif(
@@ -225,21 +228,38 @@ async def test_invalid_competition_level_rejected(conn):
         )
 
 
-async def test_seed_data_present(conn):
-    """After running the seed script the demo user and entities exist."""
-    row = await conn.execute(
-        text("SELECT COUNT(*) FROM users WHERE email = 'scorekeeper@demo.local'"),
-    )
-    assert row.scalar_one() == 1, (
-        "Demo scorekeeper not found — did you run `uv run python -m app.seed`?"
-    )
+async def test_seed_populates_demo_data():
+    """The seed script populates the demo entities and is idempotent.
 
-    row = await conn.execute(
-        text("SELECT COUNT(*) FROM competitions WHERE name = 'Demo National League'"),
-    )
-    assert row.scalar_one() == 1
+    Self-contained (doesn't rely on the pre-test seed, which per-test TRUNCATE
+    would wipe): it runs the seed twice — the second run must not raise on
+    duplicate keys — then verifies the demo rows exist exactly once.
+    """
+    if not DATABASE_URL:
+        pytest.skip("no database")
+    try:
+        await seed()
+        await seed()  # idempotent: get-or-create, no duplicate-key errors
+    except OperationalError:
+        pytest.skip("database not reachable")
+    finally:
+        # seed() disposes the cached global engine; drop it so later callers rebuild.
+        get_engine.cache_clear()
 
-    row = await conn.execute(
-        text("SELECT COUNT(*) FROM teams WHERE name IN ('Demo Hawks', 'Demo Owls')"),
-    )
-    assert row.scalar_one() == 2
+    engine = create_async_engine(DATABASE_URL)
+    try:
+        async with engine.connect() as conn:
+            users = await conn.execute(
+                text("SELECT COUNT(*) FROM users WHERE email = 'scorekeeper@demo.local'")
+            )
+            assert users.scalar_one() == 1
+            comps = await conn.execute(
+                text("SELECT COUNT(*) FROM competitions WHERE name = 'Demo National League'")
+            )
+            assert comps.scalar_one() == 1
+            teams = await conn.execute(
+                text("SELECT COUNT(*) FROM teams WHERE name IN ('Demo Hawks', 'Demo Owls')")
+            )
+            assert teams.scalar_one() == 2
+    finally:
+        await engine.dispose()
