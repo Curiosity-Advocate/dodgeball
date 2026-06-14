@@ -89,8 +89,7 @@ class AuthService:
             row = (
                 await conn.execute(
                     text(
-                        "SELECT id, password_hash, role, is_active "
-                        "FROM users WHERE email = :email"
+                        "SELECT id, password_hash, role, is_active FROM users WHERE email = :email"
                     ),
                     {"email": email},
                 )
