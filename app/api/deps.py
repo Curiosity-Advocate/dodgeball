@@ -10,8 +10,10 @@ from app.auth.tokens import AccessTokenClaims, decode_access_token
 from app.core.config import get_settings
 from app.core.db import get_engine
 from app.events.postgres import PostgresEventStore
+from app.events.store import EventStore
 from app.management.errors import MatchNotFound
 from app.management.service import ManagementService
+from app.read.service import ReadService
 from app.scoring.service import ScoringService
 
 # Process-wide auth limiter (single instance, in-memory). Exposed via a
@@ -34,6 +36,14 @@ def get_assignment_service() -> AssignmentService:
 
 def get_scoring_service() -> ScoringService:
     return ScoringService(PostgresEventStore(get_engine()))
+
+
+def get_read_service() -> ReadService:
+    return ReadService(get_engine())
+
+
+def get_event_store() -> EventStore:
+    return PostgresEventStore(get_engine())
 
 
 def get_rate_limiter() -> RateLimiter:

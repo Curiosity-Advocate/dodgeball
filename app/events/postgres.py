@@ -148,6 +148,13 @@ class PostgresEventStore(EventStore):
                 "version": new_state.version,
             },
         )
+        # Mirror the lifecycle status onto the matches row so list/filter queries
+        # see the live status; only the two transitions change it.
+        if event.type in (EventType.MATCH_STARTED, EventType.MATCH_FINALIZED):
+            await conn.execute(
+                text("UPDATE matches SET status = :s WHERE id = :m"),
+                {"s": new_state.status, "m": event.match_id},
+            )
 
     async def _recompute_standings(self, conn: AsyncConnection, match_id: int) -> None:
         """Full recompute of the competition's standings from its finalised
