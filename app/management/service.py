@@ -114,8 +114,6 @@ class ManagementService:
     async def match_exists(self, match_id: int) -> bool:
         async with self._engine.connect() as conn:
             row = (
-                await conn.execute(
-                    text("SELECT 1 FROM matches WHERE id = :id"), {"id": match_id}
-                )
+                await conn.execute(text("SELECT 1 FROM matches WHERE id = :id"), {"id": match_id})
             ).one_or_none()
         return row is not None
