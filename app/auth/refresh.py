@@ -44,6 +44,7 @@ class RefreshTokenStore:
         Raises RefreshTokenReused (chain revoked) if the token was already
         replaced, or InvalidRefreshToken if unknown / expired / revoked.
         """
+        reused = False
         async with self._engine.begin() as conn:
             row = (
                 await conn.execute(
@@ -58,22 +59,28 @@ class RefreshTokenStore:
             if row is None:
                 raise InvalidRefreshToken("unknown token")
             if row.replaced_by is not None:
+                # Reuse: revoke the chain and let this transaction COMMIT before
+                # raising — raising inside the block would roll the revocation back.
                 await self._revoke_chain(conn, row.id)
-                raise RefreshTokenReused("token already rotated")
-            if row.revoked_at is not None:
+                reused = True
+            elif row.revoked_at is not None:
                 raise InvalidRefreshToken("revoked token")
-            if row.expires_at <= datetime.now(UTC):
+            elif row.expires_at <= datetime.now(UTC):
                 raise InvalidRefreshToken("expired token")
+            else:
+                new_raw, new_id = await self._issue(conn, str(row.user_id))
+                await conn.execute(
+                    text(
+                        "UPDATE refresh_tokens SET replaced_by = :new, revoked_at = now() "
+                        "WHERE id = :old"
+                    ),
+                    {"new": new_id, "old": row.id},
+                )
+                return RotatedToken(raw=new_raw, user_id=str(row.user_id))
 
-            new_raw, new_id = await self._issue(conn, str(row.user_id))
-            await conn.execute(
-                text(
-                    "UPDATE refresh_tokens SET replaced_by = :new, revoked_at = now() "
-                    "WHERE id = :old"
-                ),
-                {"new": new_id, "old": row.id},
-            )
-            return RotatedToken(raw=new_raw, user_id=str(row.user_id))
+        # The block has committed the chain revocation; now signal the theft.
+        if reused:
+            raise RefreshTokenReused("token already rotated")
 
     async def revoke(self, raw: str) -> None:
         """Revoke a token (logout). No-op if unknown or already revoked."""
