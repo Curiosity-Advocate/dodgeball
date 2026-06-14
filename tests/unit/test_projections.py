@@ -47,8 +47,8 @@ def test_score_correction_sets_absolute_and_rederives_round():
     assert state.current_round == 4  # re-derived as 3 + 1, not incremented from 7
 
 
-def test_match_finalized_sets_final():
-    state = apply(MatchState(status="in_progress"), _event(1, EventType.MATCH_FINALIZED))
+def test_match_finalised_sets_final():
+    state = apply(MatchState(status="in_progress"), _event(1, EventType.MATCH_FINALISED))
     assert state.status == "final"
 
 
@@ -58,7 +58,7 @@ def test_fold_replays_full_log():
         _event(2, EventType.ROUND_WON_HOME),
         _event(3, EventType.ROUND_WON_AWAY),
         _event(4, EventType.ROUND_WON_HOME),
-        _event(5, EventType.MATCH_FINALIZED),
+        _event(5, EventType.MATCH_FINALISED),
     ]
     assert fold(events) == MatchState(
         score_home=2, score_away=1, current_round=3, status="final", version=5

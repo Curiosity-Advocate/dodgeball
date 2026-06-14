@@ -9,6 +9,7 @@ from app.auth.service import AuthService
 from app.auth.tokens import AccessTokenClaims, decode_access_token
 from app.core.config import get_settings
 from app.core.db import get_engine
+from app.core.dispatcher import get_dispatcher
 from app.events.postgres import PostgresEventStore
 from app.events.store import EventStore
 from app.management.errors import MatchNotFound
@@ -35,7 +36,7 @@ def get_assignment_service() -> AssignmentService:
 
 
 def get_scoring_service() -> ScoringService:
-    return ScoringService(PostgresEventStore(get_engine()))
+    return ScoringService(PostgresEventStore(get_engine(), get_dispatcher()))
 
 
 def get_read_service() -> ReadService:

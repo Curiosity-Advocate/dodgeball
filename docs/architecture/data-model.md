@@ -126,7 +126,7 @@ CREATE TABLE match_events (
                         'round_won_home',
                         'round_won_away',
                         'score_correction',
-                        'match_finalized')),
+                        'match_finalised')),
     payload         JSONB  NOT NULL DEFAULT '{}'::jsonb,
     actor_id        UUID   NOT NULL REFERENCES users(id),
     idempotency_key UUID   NOT NULL,
@@ -192,7 +192,7 @@ rebuilt by replaying `match_events` (`NFR-8`).
 | `round_won_home` | `{}` | `score_home += 1`, `current_round += 1` |
 | `round_won_away` | `{}` | `score_away += 1`, `current_round += 1` |
 | `score_correction` | `{ "score_home": N, "score_away": M }` | absolute scores set to N, M; `current_round` re-derived as N + M |
-| `match_finalized` | `{}` | `status` → `final`; triggers `standings` recompute |
+| `match_finalised` | `{}` | `status` → `final`; triggers `standings` recompute |
 
 ## Modelling notes
 

@@ -156,12 +156,12 @@ async def test_replay_unknown_match_404(ctx):
     assert (await ctx.client.get("/matches/999999/events")).status_code == 404
 
 
-async def test_standings_after_finalize(ctx):
+async def test_standings_after_finalise(ctx):
     store = PostgresEventStore(ctx.engine)
     await store.append(
         ctx.match_id,
         NewEvent(
-            type=EventType.MATCH_FINALIZED,
+            type=EventType.MATCH_FINALISED,
             actor_id=ctx.actor_id,
             idempotency_key=str(uuid.uuid4()),
             payload={},

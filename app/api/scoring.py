@@ -19,7 +19,7 @@ class PostEventRequest(BaseModel):
         "round_won_home",
         "round_won_away",
         "score_correction",
-        "match_finalized",
+        "match_finalised",
     ]
     payload: dict = Field(default_factory=dict)
     idempotency_key: str

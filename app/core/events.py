@@ -20,7 +20,7 @@ class EventType(StrEnum):
     ROUND_WON_HOME = "round_won_home"
     ROUND_WON_AWAY = "round_won_away"
     SCORE_CORRECTION = "score_correction"
-    MATCH_FINALIZED = "match_finalized"
+    MATCH_FINALISED = "match_finalised"
 
 
 @dataclass(frozen=True)

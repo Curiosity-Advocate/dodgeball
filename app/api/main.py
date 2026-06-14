@@ -7,6 +7,7 @@ from app.api.health import router as health_router
 from app.api.management import router as management_router
 from app.api.read import router as read_router
 from app.api.scoring import router as scoring_router
+from app.api.ws import router as ws_router
 from app.core.errors import AppError
 
 
@@ -17,6 +18,7 @@ def create_app() -> FastAPI:
     app.include_router(management_router)
     app.include_router(scoring_router)
     app.include_router(read_router)
+    app.include_router(ws_router)
     _register_error_handlers(app)
     return app
 

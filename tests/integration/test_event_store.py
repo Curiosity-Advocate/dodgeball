@@ -146,10 +146,10 @@ async def test_fold_equals_match_state(fx):
     assert snapshot.version == 4
 
 
-async def test_standings_recompute_on_finalize(fx):
+async def test_standings_recompute_on_finalise(fx):
     for t in (EventType.MATCH_STARTED, EventType.ROUND_WON_HOME, EventType.ROUND_WON_HOME):
         await fx.store.append(fx.match_id, fx.new_event(t))
-    await fx.store.append(fx.match_id, fx.new_event(EventType.MATCH_FINALIZED))  # home wins 2-0
+    await fx.store.append(fx.match_id, fx.new_event(EventType.MATCH_FINALISED))  # home wins 2-0
 
     async with fx.engine.connect() as conn:
         rows = (

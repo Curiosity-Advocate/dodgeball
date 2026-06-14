@@ -29,7 +29,7 @@ match is deferred to v2.0 — see [Deferred to later versions](#deferred-to-late
 | `SCORE‑2` | The assigned scorekeeper can start a match. | Emits a `match_started` event; status → `in_progress`. |
 | `SCORE‑3` | The assigned scorekeeper can record a round result (home or away). | Emits `round_won_home` / `round_won_away`; advances the score. |
 | `SCORE‑4` | The assigned scorekeeper can issue a score correction. | Emits `score_correction` with the corrected absolute scores. |
-| `SCORE‑5` | The assigned scorekeeper can finalize a match. | Emits `match_finalized`; status → `final`; triggers standings recompute (`RT-5`). |
+| `SCORE‑5` | The assigned scorekeeper can finalise a match. | Emits `match_finalised`; status → `final`; triggers standings recompute (`RT-5`). |
 | `SCORE‑6` | Event appends are idempotent. | Client supplies an idempotency key per action; a retry returns the original event, never a duplicate. |
 | `SCORE‑7` | Every event is assigned a monotonic **per-match version** on append. | Provides the ordering/replay cursor for delivery (`RT-2`, `RT-3`). Retries are handled by the idempotency key (`SCORE-6`). Using `version` for write-time optimistic concurrency is **deferred to v2.0** (multiple scorekeepers). |
 
@@ -41,7 +41,7 @@ match is deferred to v2.0 — see [Deferred to later versions](#deferred-to-late
 | `RT‑2` | Each scoring event is pushed to subscribers in order. | Ordered by per-match version. |
 | `RT‑3` | On reconnect, a client resumes from its last-seen version without missing updates. | Server replays events with version > last-seen (`READ-2`). |
 | `RT‑4` | A snapshot of current state is available for fresh or unknown-gap clients. | Bounds reconnect cost: large/unknown gap → snapshot instead of replay. |
-| `RT‑5` | Standings recompute when a match finalizes and the update is pushed to subscribers. | Simple within-competition points table. |
+| `RT‑5` | Standings recompute when a match finalises and the update is pushed to subscribers. | Simple within-competition points table. |
 
 ## Read & Query — `READ`
 

@@ -101,7 +101,7 @@ def upgrade() -> None:
                                 'round_won_home',
                                 'round_won_away',
                                 'score_correction',
-                                'match_finalized')),
+                                'match_finalised')),
             payload         JSONB  NOT NULL DEFAULT '{}'::jsonb,
             actor_id        UUID   NOT NULL REFERENCES users(id),
             idempotency_key UUID   NOT NULL,

@@ -19,7 +19,7 @@ itself.
 
 Model the write side as an **append-only event log** (`match_events`). Each scoring
 action is an immutable event (`match_started`, `round_won_home`, `round_won_away`,
-`score_correction`, `match_finalized`). The current score (`match_state`) and the
+`score_correction`, `match_finalised`). The current score (`match_state`) and the
 league table (`standings`) are **projections** folded from the log, and can be
 rebuilt from it at any time. A correction is a new event, never an in-place update.
 

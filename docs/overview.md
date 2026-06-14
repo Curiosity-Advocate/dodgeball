@@ -211,7 +211,7 @@ All persistent state lives in PostgreSQL, organised by the data bands from §2.
 **Append-only / immutable — the source of truth.**
 
 - `match_events` — the event log. One row per scoring fact (`match_started`,
-  `round_won_home`, `round_won_away`, `score_correction`, `match_finalized`),
+  `round_won_home`, `round_won_away`, `score_correction`, `match_finalised`),
   each carrying a per-match `version`, an `idempotency_key`, and the acting user.
   Rows are never updated or deleted; a correction is itself a new event.
 

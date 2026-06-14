@@ -57,7 +57,7 @@ Auth: the assigned scorekeeper for this match, or an admin.
 }
 ```
 
-`type` ∈ `match_started | round_won_home | round_won_away | score_correction | match_finalized`.
+`type` ∈ `match_started | round_won_home | round_won_away | score_correction | match_finalised`.
 For `score_correction`, `payload` is `{ "score_home": N, "score_away": M }`.
 The `idempotency_key` is a client-generated UUID, stable across retries of the same
 action.

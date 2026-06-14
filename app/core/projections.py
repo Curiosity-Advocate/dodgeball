@@ -55,7 +55,7 @@ def apply(state: MatchState, event: Event) -> MatchState:
                 version=event.version,
             )
 
-        case EventType.MATCH_FINALIZED:
+        case EventType.MATCH_FINALISED:
             return replace(state, status="final", version=event.version)
 
         case _:

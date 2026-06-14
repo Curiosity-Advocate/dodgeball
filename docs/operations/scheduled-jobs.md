@@ -19,7 +19,7 @@ where future jobs will land.
 ## Not scheduled (clarified to avoid confusion)
 
 - **Standings recomputation is event-driven, not a cron job.** It runs when a match
-  finalises (`match_finalized` → `RT-5`), not on a timer.
+  finalises (`match_finalised` → `RT-5`), not on a timer.
 - **Projection rebuild is an on-demand maintenance utility, not a schedule.** If a
   projection (`match_state`, `standings`) is ever lost or corrupted, it is rebuilt by
   replaying `match_events` via a manually-run command. It exists because projections

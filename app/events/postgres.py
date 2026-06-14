@@ -9,6 +9,7 @@ import json
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from app.core.dispatcher import Dispatcher, MatchUpdate
 from app.core.events import Event, EventType, MatchState, NewEvent
 from app.core.projections import MatchResult, apply, compute_standings
 from app.events.store import AppendResult, EventStore
@@ -35,8 +36,9 @@ def _row_to_event(row) -> Event:
 
 
 class PostgresEventStore(EventStore):
-    def __init__(self, engine: AsyncEngine) -> None:
+    def __init__(self, engine: AsyncEngine, dispatcher: Dispatcher | None = None) -> None:
         self._engine = engine
+        self._dispatcher = dispatcher
 
     async def append(self, match_id: int, event: NewEvent) -> AppendResult:
         async with self._engine.begin() as conn:
@@ -78,10 +80,15 @@ class PostgresEventStore(EventStore):
                 return AppendResult(_row_to_event(original), created=False)
 
             stored = _row_to_event(inserted)
-            await self._write_through(conn, stored)
-            if stored.type is EventType.MATCH_FINALIZED:
+            new_state = await self._write_through(conn, stored)
+            if stored.type is EventType.MATCH_FINALISED:
                 await self._recompute_standings(conn, match_id)
-            return AppendResult(stored, created=True)
+
+        # Publish only after the transaction has committed, so subscribers never
+        # hear about an event that was rolled back.
+        if self._dispatcher is not None:
+            self._dispatcher.publish(match_id, MatchUpdate(event=stored, state=new_state))
+        return AppendResult(stored, created=True)
 
     async def read_since(self, match_id: int, version: int) -> list[Event]:
         async with self._engine.connect() as conn:
@@ -122,8 +129,9 @@ class PostgresEventStore(EventStore):
             version=row.version,
         )
 
-    async def _write_through(self, conn: AsyncConnection, event: Event) -> None:
-        """Apply the new event to the stored match_state row (upsert)."""
+    async def _write_through(self, conn: AsyncConnection, event: Event) -> MatchState:
+        """Apply the new event to the stored match_state row (upsert); return the
+        resulting state so the caller can publish it after commit."""
         new_state = apply(await self._read_state(conn, event.match_id), event)
         await conn.execute(
             text("""
@@ -150,11 +158,12 @@ class PostgresEventStore(EventStore):
         )
         # Mirror the lifecycle status onto the matches row so list/filter queries
         # see the live status; only the two transitions change it.
-        if event.type in (EventType.MATCH_STARTED, EventType.MATCH_FINALIZED):
+        if event.type in (EventType.MATCH_STARTED, EventType.MATCH_FINALISED):
             await conn.execute(
                 text("UPDATE matches SET status = :s WHERE id = :m"),
                 {"s": new_state.status, "m": event.match_id},
             )
+        return new_state
 
     async def _recompute_standings(self, conn: AsyncConnection, match_id: int) -> None:
         """Full recompute of the competition's standings from its finalised
