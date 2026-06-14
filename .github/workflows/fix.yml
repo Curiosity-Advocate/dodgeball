@@ -1,0 +1,26 @@
+name: Auto-fix lint + format
+
+# One-off, manually triggered: runs ruff's autofixer and formatter on a runner
+# (the local machine has no ruff) and commits the result. Removed once clean.
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run ruff check --fix app tests
+      - run: uv run ruff format app tests
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet || (
+            git add -A
+            git commit -m "style: apply ruff format"
+            git push
+          )
