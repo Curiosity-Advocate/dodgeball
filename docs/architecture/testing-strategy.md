@@ -39,23 +39,32 @@ an open Known Gap rather than an invented constant. The same data also signals w
 the deferred scaling lever (`NFR-4`) becomes necessary, so the measurement is what
 makes the scale-out decision evidence-based instead of speculative.
 
+## Test isolation
+
+Database-backed tests share one `engine` fixture (`tests/conftest.py`) that
+`TRUNCATE`s every domain table on entry, so each test starts from an empty
+database. This holds for the real-time tests too, which need committed data —
+the WebSocket route reads through its own connection. Pure unit tests request no
+database fixture and never touch Postgres.
+
 ## Tooling
 
 - `pytest` + `pytest-asyncio` for the suite.
-- `httpx` ASGI client for API tests.
-- A real PostgreSQL in tests via Testcontainers (or a disposable Docker database).
-- A WebSocket test client for the real-time scenarios.
-- `import-linter` for the architecture contracts.
-- `k6` or Locust for the load & measurement harness.
+- `hypothesis` for property-based tests of the pure projection logic.
+- `httpx` ASGI client for API tests; Starlette's `TestClient` for the WebSocket tests.
+- A real PostgreSQL, isolated per test by `TRUNCATE` (see Test isolation above).
+- `import-linter` for the architecture contracts (run as a CI step).
+- `k6` for the load & measurement harness, run non-gating in CI and against the deployment.
 
 ## Layout
 
 ```
 tests/
-├── unit/           pure logic (folding, standings, tokens)
-├── integration/    EventStore + auth against real Postgres
-├── api/            endpoint + status-code contracts
-├── realtime/       reconnect / replay / ordering
-├── arch/           import-linter boundary contracts
-└── load/           concurrency + latency measurement harness
+├── unit/           pure logic + Hypothesis property tests (folding, standings, tokens)
+├── integration/    EventStore + auth + read/write API against real Postgres
+├── realtime/       reconnect / replay / ordering (Starlette WebSocket client)
+└── load/           k6 concurrency + latency measurement harness
 ```
+
+API contracts live in `integration/`; the architecture contracts run via
+`import-linter` in CI rather than as a `tests/arch/` directory.

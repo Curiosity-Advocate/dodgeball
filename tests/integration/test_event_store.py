@@ -1,27 +1,18 @@
 """Integration tests for PostgresEventStore — against a real Postgres.
 
-Skipped when DATABASE_URL is unset or unreachable. Each test provisions its own
-competition / teams / match / user (committed, because the store commits its own
-transactions) and cleans them up afterwards.
+The shared `engine` fixture (conftest) truncates the database per test; each test
+provisions its own competition / teams / match / user (committed, because the
+store commits its own transactions).
 """
 
-import os
 import uuid
 
 import pytest
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.events import EventType, NewEvent
 from app.core.projections import fold
 from app.events.postgres import PostgresEventStore
-
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
-
-pytestmark = pytest.mark.skipif(
-    not DATABASE_URL, reason="DATABASE_URL not set — skipping integration tests"
-)
 
 
 class _Fixture:
@@ -44,15 +35,7 @@ class _Fixture:
 
 
 @pytest.fixture
-async def fx():
-    engine = create_async_engine(DATABASE_URL)
-    try:
-        async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-    except OperationalError:
-        await engine.dispose()
-        pytest.skip("database not reachable")
-
+async def fx(engine):
     async with engine.begin() as conn:
         competition_id = (
             await conn.execute(
@@ -88,28 +71,7 @@ async def fx():
         ).scalar_one()
 
     store = PostgresEventStore(engine)
-    try:
-        yield _Fixture(engine, store, match_id, str(actor_id), competition_id, home_id, away_id)
-    finally:
-        async with engine.begin() as conn:
-            await conn.execute(
-                text("DELETE FROM match_events WHERE match_id = :m"), {"m": match_id}
-            )
-            await conn.execute(
-                text("DELETE FROM standings WHERE competition_id = :c"), {"c": competition_id}
-            )
-            # deleting the match cascades match_state and match_scorekeepers
-            await conn.execute(text("DELETE FROM matches WHERE id = :m"), {"m": match_id})
-            await conn.execute(
-                text("DELETE FROM teams WHERE id IN (:h, :a)"), {"h": home_id, "a": away_id}
-            )
-            await conn.execute(
-                text("DELETE FROM competitions WHERE id = :c"), {"c": competition_id}
-            )
-            await conn.execute(
-                text("DELETE FROM users WHERE id = CAST(:u AS uuid)"), {"u": actor_id}
-            )
-        await engine.dispose()
+    yield _Fixture(engine, store, match_id, str(actor_id), competition_id, home_id, away_id)
 
 
 async def test_append_assigns_incrementing_version(fx):
@@ -128,6 +90,8 @@ async def test_idempotent_retry_returns_original(fx):
     assert second.event.id == first.event.id
     assert second.event.version == first.event.version
     assert len(await fx.store.read_since(fx.match_id, 0)) == 1  # nothing appended twice
+    state = await fx.store.snapshot(fx.match_id)
+    assert state.version == 1  # the projection advanced once, not twice
 
 
 async def test_fold_equals_match_state(fx):
@@ -138,12 +102,17 @@ async def test_fold_equals_match_state(fx):
         EventType.ROUND_WON_HOME,
     ):
         await fx.store.append(fx.match_id, fx.new_event(t))
+    # a correction mid-log exercises the interleaving the write-through must mirror
+    await fx.store.append(
+        fx.match_id,
+        fx.new_event(EventType.SCORE_CORRECTION, {"score_home": 5, "score_away": 2}),
+    )
 
     snapshot = await fx.store.snapshot(fx.match_id)
     rebuilt = fold(await fx.store.read_since(fx.match_id, 0))
     assert snapshot == rebuilt
-    assert (snapshot.score_home, snapshot.score_away, snapshot.current_round) == (2, 1, 3)
-    assert snapshot.version == 4
+    assert (snapshot.score_home, snapshot.score_away, snapshot.current_round) == (5, 2, 7)
+    assert snapshot.version == 5
 
 
 async def test_standings_recompute_on_finalise(fx):

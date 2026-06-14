@@ -1,6 +1,5 @@
 """Contract tests for the write path (management + scoring) against real Postgres."""
 
-import os
 import uuid
 from dataclasses import dataclass
 
@@ -8,8 +7,6 @@ import httpx
 import pytest
 from httpx import ASGITransport
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.deps import get_assignment_service, get_management_service, get_scoring_service
 from app.api.main import create_app
@@ -18,9 +15,6 @@ from app.auth.tokens import create_access_token
 from app.events.postgres import PostgresEventStore
 from app.management.service import ManagementService
 from app.scoring.service import ScoringService
-
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
-pytestmark = pytest.mark.skipif(not DATABASE_URL, reason="DATABASE_URL not set")
 
 
 @dataclass
@@ -37,44 +31,6 @@ def _auth(token: str) -> dict:
 
 def _event(type_: str, key: str, payload: dict | None = None) -> dict:
     return {"type": type_, "idempotency_key": key, "payload": payload or {}}
-
-
-@pytest.fixture
-async def engine():
-    eng = create_async_engine(DATABASE_URL)
-    try:
-        async with eng.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-    except OperationalError:
-        await eng.dispose()
-        pytest.skip("database not reachable")
-    try:
-        yield eng
-    finally:
-        async with eng.begin() as conn:
-            await conn.execute(
-                text(
-                    "DELETE FROM match_events WHERE match_id IN (SELECT id FROM matches "
-                    "WHERE competition_id IN "
-                    "(SELECT id FROM competitions WHERE name LIKE 'WPTEST%'))"
-                )
-            )
-            await conn.execute(
-                text(
-                    "DELETE FROM standings WHERE competition_id IN "
-                    "(SELECT id FROM competitions WHERE name LIKE 'WPTEST%')"
-                )
-            )
-            await conn.execute(
-                text(
-                    "DELETE FROM matches WHERE competition_id IN "
-                    "(SELECT id FROM competitions WHERE name LIKE 'WPTEST%')"
-                )
-            )
-            await conn.execute(text("DELETE FROM teams WHERE name LIKE 'WPTEST%'"))
-            await conn.execute(text("DELETE FROM competitions WHERE name LIKE 'WPTEST%'"))
-            await conn.execute(text("DELETE FROM users WHERE email LIKE '%@wptest.local'"))
-        await eng.dispose()
 
 
 async def _make_user(engine, role: str) -> dict:

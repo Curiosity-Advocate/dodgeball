@@ -1,0 +1,52 @@
+name: Load (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      vus:
+        description: Concurrent spectator WebSocket connections
+        default: "200"
+      duration:
+        description: Test duration (e.g. 30s, 2m)
+        default: "30s"
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dodgeball
+          POSTGRES_PASSWORD: dodgeball
+          POSTGRES_DB: dodgeball
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://dodgeball:dodgeball@localhost:5432/dodgeball
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run alembic upgrade head
+      - run: uv run python -m app.seed
+      - name: Resolve target match + token
+        id: target
+        run: uv run python tests/load/issue_target.py >> "$GITHUB_OUTPUT"
+      - name: Start app
+        run: |
+          uv run uvicorn app.api.main:app --host 0.0.0.0 --port 8000 &
+          for _ in $(seq 1 30); do curl -sf http://localhost:8000/health && break; sleep 1; done
+      - uses: grafana/setup-k6-action@v1
+      - name: Run k6
+        run: k6 run tests/load/spectators.js
+        env:
+          BASE_URL: http://localhost:8000
+          WS_URL: ws://localhost:8000
+          MATCH_ID: ${{ steps.target.outputs.match_id }}
+          TOKEN: ${{ steps.target.outputs.token }}
+          VUS: ${{ inputs.vus }}
+          DURATION: ${{ inputs.duration }}

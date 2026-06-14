@@ -8,7 +8,6 @@ TestClient's own event loop, plus one shared Dispatcher so the scoring POST
 """
 
 import asyncio
-import os
 import uuid
 from dataclasses import dataclass
 
@@ -33,8 +32,8 @@ from app.events.postgres import PostgresEventStore
 from app.management.service import ManagementService
 from app.read.service import ReadService
 from app.scoring.service import ScoringService
+from tests.conftest import DATABASE_URL, truncate_all
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
 pytestmark = pytest.mark.skipif(not DATABASE_URL, reason="DATABASE_URL not set")
 
 
@@ -57,6 +56,7 @@ async def _setup() -> dict:
     """Create a competition, two teams, a match, and an assigned scorekeeper."""
     engine = create_async_engine(DATABASE_URL)
     try:
+        await truncate_all(engine)  # start from empty (shared isolation policy)
         async with engine.begin() as conn:
             comp = (
                 await conn.execute(
@@ -106,23 +106,7 @@ async def _setup() -> dict:
 async def _cleanup() -> None:
     engine = create_async_engine(DATABASE_URL)
     try:
-        async with engine.begin() as conn:
-            await conn.execute(
-                text(
-                    "DELETE FROM match_events WHERE match_id IN (SELECT id FROM matches "
-                    "WHERE competition_id IN "
-                    "(SELECT id FROM competitions WHERE name LIKE 'WSTEST%'))"
-                )
-            )
-            await conn.execute(
-                text(
-                    "DELETE FROM matches WHERE competition_id IN "
-                    "(SELECT id FROM competitions WHERE name LIKE 'WSTEST%')"
-                )
-            )
-            await conn.execute(text("DELETE FROM teams WHERE name LIKE 'WSTEST%'"))
-            await conn.execute(text("DELETE FROM competitions WHERE name LIKE 'WSTEST%'"))
-            await conn.execute(text("DELETE FROM users WHERE email LIKE '%@wstest.local'"))
+        await truncate_all(engine)
     finally:
         await engine.dispose()
 

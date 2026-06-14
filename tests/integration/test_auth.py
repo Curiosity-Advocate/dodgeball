@@ -1,52 +1,26 @@
 """Integration tests for the auth API — against a real Postgres.
 
-Skipped without DATABASE_URL. The app's DB dependency is overridden to a per-test
-engine (bound to the test event loop), and the rate limiter is overridden so it
-doesn't leak across tests. Created accounts use @authtest.local and are deleted
-in teardown (cascading their refresh tokens).
+The shared `engine` fixture (conftest) truncates the database per test, and the
+rate limiter is overridden so it doesn't leak across tests.
 """
 
-import os
 import uuid
 from contextlib import asynccontextmanager
 
 import httpx
 import pytest
 from httpx import ASGITransport
-from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.deps import get_auth_service, get_rate_limiter
 from app.api.main import create_app
 from app.auth.ratelimit import RateLimiter
 from app.auth.service import AuthService
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
-pytestmark = pytest.mark.skipif(not DATABASE_URL, reason="DATABASE_URL not set")
-
 _PW = "password123"
 
 
 def _email() -> str:
     return f"{uuid.uuid4()}@authtest.local"
-
-
-@pytest.fixture
-async def engine():
-    eng = create_async_engine(DATABASE_URL)
-    try:
-        async with eng.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-    except OperationalError:
-        await eng.dispose()
-        pytest.skip("database not reachable")
-    try:
-        yield eng
-    finally:
-        async with eng.begin() as conn:
-            await conn.execute(text("DELETE FROM users WHERE email LIKE '%@authtest.local'"))
-        await eng.dispose()
 
 
 @asynccontextmanager
