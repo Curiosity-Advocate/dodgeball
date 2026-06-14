@@ -7,18 +7,30 @@ implementation; tests can substitute a fake.
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 from app.core.events import Event, MatchState, NewEvent
 
 
+@dataclass(frozen=True)
+class AppendResult:
+    """Outcome of an append: the stored event, and whether it was newly created
+    (created=True -> HTTP 201) or returned from an idempotent retry
+    (created=False -> HTTP 200).
+    """
+
+    event: Event
+    created: bool
+
+
 class EventStore(ABC):
     @abstractmethod
-    async def append(self, match_id: int, event: NewEvent) -> Event:
-        """Append one event to a match's log and return the stored Event.
+    async def append(self, match_id: int, event: NewEvent) -> AppendResult:
+        """Append one event to a match's log and return the result.
 
         Assigns the next contiguous per-match version. Idempotent: if an event
         with the same idempotency_key already exists, the original Event is
-        returned and nothing is appended (ADR-0005).
+        returned with created=False and nothing is appended (ADR-0005).
         """
         ...
 

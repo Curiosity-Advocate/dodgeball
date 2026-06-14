@@ -1,8 +1,8 @@
 """AuthService — orchestrates registration, login, refresh, and logout.
 
-Holds the engine (Phase 2 pattern) and composes the auth primitives: argon2
-password hashing, JWT access tokens, and the rotating refresh-token store. The
-sole accessor of the users table.
+Holds the engine and composes the auth primitives: argon2 password hashing, JWT
+access tokens, and the rotating refresh-token store. The sole accessor of the
+users table.
 """
 
 from dataclasses import dataclass

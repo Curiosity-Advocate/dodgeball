@@ -1,7 +1,7 @@
 """PostgresEventStore — the v1.0 EventStore implementation (ADR-0003).
 
 The only module that reads or writes match_events directly. SQLAlchemy Core
-(text) over an async engine; each method runs in its own transaction (Decision 5).
+(text) over an async engine; each method runs in its own transaction.
 """
 
 import json
@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from app.core.events import Event, EventType, MatchState, NewEvent
 from app.core.projections import MatchResult, apply, compute_standings
-from app.events.store import EventStore
+from app.events.store import AppendResult, EventStore
 
 # match_events columns whenever we materialise an Event, in dataclass field order.
 _EVENT_COLUMNS = "id, match_id, version, type, payload, actor_id, idempotency_key, created_at"
@@ -38,7 +38,7 @@ class PostgresEventStore(EventStore):
     def __init__(self, engine: AsyncEngine) -> None:
         self._engine = engine
 
-    async def append(self, match_id: int, event: NewEvent) -> Event:
+    async def append(self, match_id: int, event: NewEvent) -> AppendResult:
         async with self._engine.begin() as conn:
             inserted = (
                 await conn.execute(
@@ -75,13 +75,13 @@ class PostgresEventStore(EventStore):
                         {"k": event.idempotency_key},
                     )
                 ).one()
-                return _row_to_event(original)
+                return AppendResult(_row_to_event(original), created=False)
 
             stored = _row_to_event(inserted)
             await self._write_through(conn, stored)
             if stored.type is EventType.MATCH_FINALIZED:
                 await self._recompute_standings(conn, match_id)
-            return stored
+            return AppendResult(stored, created=True)
 
     async def read_since(self, match_id: int, version: int) -> list[Event]:
         async with self._engine.connect() as conn:
@@ -151,7 +151,7 @@ class PostgresEventStore(EventStore):
 
     async def _recompute_standings(self, conn: AsyncConnection, match_id: int) -> None:
         """Full recompute of the competition's standings from its finalised
-        matches (Decision 4), in the same transaction as the finalising event.
+        matches, in the same transaction as the finalising event.
         """
         competition_id = (
             await conn.execute(

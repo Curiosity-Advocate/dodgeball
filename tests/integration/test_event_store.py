@@ -113,18 +113,20 @@ async def fx():
 
 
 async def test_append_assigns_incrementing_version(fx):
-    e1 = await fx.store.append(fx.match_id, fx.new_event(EventType.MATCH_STARTED))
-    e2 = await fx.store.append(fx.match_id, fx.new_event(EventType.ROUND_WON_HOME))
-    assert e1.version == 1
-    assert e2.version == 2
+    r1 = await fx.store.append(fx.match_id, fx.new_event(EventType.MATCH_STARTED))
+    r2 = await fx.store.append(fx.match_id, fx.new_event(EventType.ROUND_WON_HOME))
+    assert (r1.event.version, r1.created) == (1, True)
+    assert (r2.event.version, r2.created) == (2, True)
 
 
 async def test_idempotent_retry_returns_original(fx):
     event = fx.new_event(EventType.MATCH_STARTED)
     first = await fx.store.append(fx.match_id, event)
     second = await fx.store.append(fx.match_id, event)  # same idempotency_key
-    assert second.id == first.id
-    assert second.version == first.version
+    assert first.created is True
+    assert second.created is False  # idempotent replay, not a new append
+    assert second.event.id == first.event.id
+    assert second.event.version == first.event.version
     assert len(await fx.store.read_since(fx.match_id, 0)) == 1  # nothing appended twice
 
 

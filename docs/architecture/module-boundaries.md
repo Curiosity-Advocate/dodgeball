@@ -17,6 +17,7 @@ Python packages under `app/`:
 | `scoring` | The write path: validate a scoring action and append via `events` | `core`, `events` |
 | `delivery` | Real-time: WebSocket connections and fan-out; *consumes* events | `core` |
 | `read` | Query / read models: snapshot, replay, standings, listings | `core` |
+| `management` | Admin CRUD of reference entities: competitions, teams, matches | `core` |
 | `api` | FastAPI routers; the composition root wiring modules to HTTP/WS | all modules |
 
 ## Dependency rules
@@ -75,5 +76,6 @@ app/
 ├── scoring/     write path (append via events)
 ├── delivery/    WebSocket connections + fan-out
 ├── read/        queries / read models
+├── management/  admin CRUD of competitions, teams, matches
 └── api/         FastAPI routers (composition root)
 ```
