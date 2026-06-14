@@ -28,7 +28,8 @@ WebSocket live path.
 | GET | `/auth/me` | bearer | — | `200 { user }` |
 
 `login` and `refresh` return a new refresh token each time (rotation). `refresh`
-rejects a token that is expired, revoked, or already replaced.
+rejects a token that is expired, revoked, or already replaced. `register` returns
+`409` if the email is already registered.
 
 ## Management (admin)
 
@@ -155,6 +156,6 @@ Public for public matches. The client tracks the `version` it has applied.
 | `401` | missing / invalid access token |
 | `403` | authenticated but not authorised (not assigned / not admin) |
 | `404` | not found |
-| `409` | version conflict — **v2.0 only** (optimistic concurrency) |
+| `409` | conflict — duplicate email on `register`; also v2.0 version conflict in scoring (optimistic concurrency) |
 | `422` | validation error |
 | `429` | rate-limited (auth endpoints) |

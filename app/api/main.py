@@ -1,12 +1,34 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
+from app.api.auth import router as auth_router
 from app.api.health import router as health_router
+from app.auth.errors import AuthError
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="DodgeballPlus")
     app.include_router(health_router)
+    app.include_router(auth_router)
+    _register_error_handlers(app)
     return app
+
+
+def _register_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(AuthError)
+    async def _on_auth_error(request: Request, exc: AuthError) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": {"code": exc.code, "message": str(exc)}},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def _on_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={"error": {"code": "validation_error", "message": "Invalid request"}},
+        )
 
 
 app = create_app()
