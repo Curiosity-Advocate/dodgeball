@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "DodgeballPlus Live",
+  "version": "0.1.0",
+  "description": "Live dodgeball scores beside the game on YouTube.",
+  "host_permissions": [
+    "https://dodgeball-rqt0.onrender.com/*",
+    "wss://dodgeball-rqt0.onrender.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/watch*"],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

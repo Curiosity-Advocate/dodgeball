@@ -1,6 +1,8 @@
 .git
 .github
 .venv
+extension
+examples
 __pycache__
 *.py[cod]
 .env

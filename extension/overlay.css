@@ -1,0 +1,150 @@
+#dbp-panel {
+  position: fixed;
+  top: 80px;
+  right: 16px;
+  width: 260px;
+  z-index: 99999;
+  background: #0f1115;
+  color: #f2f4f8;
+  border: 1px solid #2a2f3a;
+  border-radius: 10px;
+  font-family: Roboto, Arial, sans-serif;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+#dbp-panel .dbp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #161a22;
+  border-bottom: 1px solid #2a2f3a;
+}
+
+#dbp-panel .dbp-title {
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+#dbp-panel .dbp-close {
+  background: none;
+  border: none;
+  color: #9aa3b2;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#dbp-panel .dbp-close:hover {
+  color: #fff;
+}
+
+#dbp-panel .dbp-body {
+  padding: 10px 12px;
+}
+
+#dbp-panel .dbp-muted {
+  color: #9aa3b2;
+  font-size: 13px;
+  padding: 6px 0;
+}
+
+#dbp-panel .dbp-section {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9aa3b2;
+  margin-bottom: 6px;
+}
+
+#dbp-panel .dbp-game {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: #161a22;
+  border: 1px solid #2a2f3a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  color: inherit;
+}
+
+#dbp-panel .dbp-game:hover {
+  border-color: #3b82f6;
+}
+
+#dbp-panel .dbp-teams {
+  display: block;
+  font-size: 13px;
+}
+
+#dbp-panel .dbp-teams b {
+  color: #fff;
+}
+
+#dbp-panel .dbp-comp {
+  display: block;
+  font-size: 11px;
+  color: #9aa3b2;
+  margin-top: 2px;
+}
+
+#dbp-panel .dbp-btn,
+#dbp-panel .dbp-back {
+  background: #161a22;
+  border: 1px solid #2a2f3a;
+  color: #cbd2dd;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#dbp-panel .dbp-btn:hover,
+#dbp-panel .dbp-back:hover {
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+#dbp-panel .dbp-back {
+  margin-bottom: 8px;
+}
+
+#dbp-panel .dbp-score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+#dbp-panel .dbp-team {
+  flex: 1;
+  text-align: center;
+}
+
+#dbp-panel .dbp-name {
+  font-size: 12px;
+  color: #cbd2dd;
+}
+
+#dbp-panel .dbp-points {
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+}
+
+#dbp-panel .dbp-sep {
+  font-size: 22px;
+  color: #6b7280;
+  padding: 0 8px;
+}
+
+#dbp-panel .dbp-status {
+  text-align: center;
+  font-size: 12px;
+  color: #9aa3b2;
+  margin-top: 4px;
+}
