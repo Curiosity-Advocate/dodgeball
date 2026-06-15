@@ -4,8 +4,7 @@
   "version": "0.1.0",
   "description": "Live dodgeball scores beside the game on YouTube.",
   "host_permissions": [
-    "https://dodgeball-rqt0.onrender.com/*",
-    "wss://dodgeball-rqt0.onrender.com/*"
+    "https://dodgeball-rqt0.onrender.com/*"
   ],
   "content_scripts": [
     {
