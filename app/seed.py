@@ -28,6 +28,11 @@ async def seed() -> None:
         away_id = await _get_or_create_team(conn, "Demo Owls")
         match_id = await _get_or_create_match(conn, comp_id, home_id, away_id)
         await _get_or_create_scorekeeper(conn, match_id, user_id)
+        # A scheduled match, so a scorekeeper can start one from scratch in the UI.
+        fox_id = await _get_or_create_team(conn, "Demo Foxes")
+        bear_id = await _get_or_create_team(conn, "Demo Bears")
+        scheduled_id = await _get_or_create_scheduled_match(conn, comp_id, fox_id, bear_id)
+        await _get_or_create_scorekeeper(conn, scheduled_id, user_id)
     await engine.dispose()
     print("Seed complete.")  # noqa: T201
 
@@ -112,6 +117,34 @@ async def _get_or_create_match(conn, comp_id: int, home_id: int, away_id: int) -
     match_id = result.scalar_one()
 
     # Initialise the match_state projection row
+    await conn.execute(
+        text("INSERT INTO match_state (match_id) VALUES (:mid)"),
+        {"mid": match_id},
+    )
+    return match_id
+
+
+async def _get_or_create_scheduled_match(conn, comp_id: int, home_id: int, away_id: int) -> int:
+    row = await conn.execute(
+        text("""
+            SELECT id FROM matches
+            WHERE competition_id = :comp AND home_team_id = :home AND away_team_id = :away
+        """),
+        {"comp": comp_id, "home": home_id, "away": away_id},
+    )
+    existing = row.scalar_one_or_none()
+    if existing is not None:
+        return existing
+
+    result = await conn.execute(
+        text("""
+            INSERT INTO matches (competition_id, home_team_id, away_team_id, scheduled_at)
+            VALUES (:comp, :home, :away, now())
+            RETURNING id
+        """),
+        {"comp": comp_id, "home": home_id, "away": away_id},
+    )
+    match_id = result.scalar_one()
     await conn.execute(
         text("INSERT INTO match_state (match_id) VALUES (:mid)"),
         {"mid": match_id},

@@ -229,3 +229,14 @@
   color: #9aa3b2;
   margin-top: 6px;
 }
+
+#dbp-panel .dbp-authbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+#dbp-panel .dbp-authbar .dbp-who {
+  margin-top: 0;
+}
