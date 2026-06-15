@@ -112,8 +112,20 @@ Replay for reconnect — events with `version` greater than `since`, in order.
 | Method | Path | Notes |
 |--------|------|-------|
 | GET | `/competitions/{id}/standings` | points table |
-| GET | `/matches?team=&competition=&date=&status=` | list / filter |
+| GET | `/matches?team=&competition=&date=&status=` | list / filter; each item carries team & competition **names** and the live **score** (so a client can render a readable game list in one request) |
 | GET | `/matches/{id}`, `/teams/{id}`, `/competitions/{id}` | entity detail |
+
+A `/matches` list item:
+
+```json
+{
+  "id": 1, "competition_id": 1, "home_team_id": 1, "away_team_id": 2,
+  "scheduled_at": null, "status": "in_progress", "created_at": "…",
+  "home_team_name": "Demo Hawks", "away_team_name": "Demo Owls",
+  "competition_name": "Demo National League",
+  "score_home": 2, "score_away": 1
+}
+```
 
 ## WebSocket (live)
 

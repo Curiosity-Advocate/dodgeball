@@ -75,22 +75,38 @@ class ReadService:
         clauses: list[str] = []
         params: dict[str, Any] = {}
         if team is not None:
-            clauses.append("(home_team_id = :team OR away_team_id = :team)")
+            clauses.append("(m.home_team_id = :team OR m.away_team_id = :team)")
             params["team"] = team
         if competition is not None:
-            clauses.append("competition_id = :competition")
+            clauses.append("m.competition_id = :competition")
             params["competition"] = competition
         if match_date is not None:
-            clauses.append("scheduled_at::date = :match_date")
+            clauses.append("m.scheduled_at::date = :match_date")
             params["match_date"] = match_date
         if status is not None:
-            clauses.append("status = :status")
+            clauses.append("m.status = :status")
             params["status"] = status
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        # Resolve team/competition names and the live score so clients can show a
+        # readable game list without an extra round trip per match.
         async with self._engine.connect() as conn:
             rows = (
                 await conn.execute(
-                    text(f"SELECT {_MATCH_COLUMNS} FROM matches{where} ORDER BY id"), params
+                    text(
+                        "SELECT m.id, m.competition_id, m.home_team_id, m.away_team_id, "
+                        "m.scheduled_at, m.status, m.created_at, "
+                        "h.name AS home_team_name, a.name AS away_team_name, "
+                        "c.name AS competition_name, "
+                        "COALESCE(s.score_home, 0) AS score_home, "
+                        "COALESCE(s.score_away, 0) AS score_away "
+                        "FROM matches m "
+                        "JOIN teams h ON h.id = m.home_team_id "
+                        "JOIN teams a ON a.id = m.away_team_id "
+                        "JOIN competitions c ON c.id = m.competition_id "
+                        "LEFT JOIN match_state s ON s.match_id = m.id "
+                        f"{where} ORDER BY m.id"
+                    ),
+                    params,
                 )
             ).all()
         return [dict(r._mapping) for r in rows]

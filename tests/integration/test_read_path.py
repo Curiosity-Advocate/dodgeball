@@ -142,7 +142,13 @@ async def test_list_matches_by_competition(ctx):
 
 async def test_list_matches_by_status_in_progress(ctx):
     r = await ctx.client.get("/matches", params={"status": "in_progress"})
-    assert ctx.match_id in [m["id"] for m in r.json()["matches"]]
+    matches = r.json()["matches"]
+    assert ctx.match_id in [m["id"] for m in matches]
+    match = next(m for m in matches if m["id"] == ctx.match_id)
+    assert match["home_team_name"] == "RDTEST Home"
+    assert match["away_team_name"] == "RDTEST Away"
+    assert match["competition_name"] == "RDTEST League"
+    assert (match["score_home"], match["score_away"]) == (2, 0)
 
 
 async def test_get_match_detail(ctx):
