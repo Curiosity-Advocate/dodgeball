@@ -11,8 +11,10 @@ run in production so deploys are reproducible and the environment is explicit.
 - **Web Service** — the FastAPI application, served by a **single `uvicorn`
   process** (one event loop, no worker fan-out). Auto-deploys from the Git
   repository.
-- **Render Managed PostgreSQL** — version 13+, with `citext` enabled once via a
-  migration. `gen_random_uuid()` is built in (no extension needed).
+- **Managed PostgreSQL (Neon)** — version 13+, hosted on Neon's free tier (Render's
+  free tier allows only one database per account, kept for another project; the web
+  service points at Neon via `DATABASE_URL`). `citext` is enabled once via a
+  migration; `gen_random_uuid()` is built in (no extension needed).
 
 Redis is not deployed in v1.0 (in-process fan-out, ADR-0006); it is added only with
 the deferred scaling lever.
@@ -45,8 +47,8 @@ applied.
 Configuration is declared in `render.yaml` (a Render Blueprint); secrets are never
 committed:
 
-- `DATABASE_URL` — auto-wired from the Render PostgreSQL instance. Render injects it
-  as `postgres://…`; `app/core/config.py` normalizes the scheme to
+- `DATABASE_URL` — the Neon connection string, set in the dashboard (`sync: false`).
+  Neon hands it out as `postgres://…`; `app/core/config.py` normalizes the scheme to
   `postgresql+asyncpg://…` (the async driver the app and Alembic require).
 - `JWT_SECRET` — generated per service by Render (`generateValue`), so a real signing
   key exists in production without committing one.

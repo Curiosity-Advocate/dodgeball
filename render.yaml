@@ -1,9 +1,5 @@
-databases:
-  - name: dodgeball-db
-    databaseName: dodgeball
-    plan: free
-    region: singapore
-
+# DodgeballPlus runs only its web service on Render; Postgres is hosted on Neon
+# (Render's free tier allows one database per account, kept for another project).
 services:
   - type: web
     name: dodgeball
@@ -14,8 +10,6 @@ services:
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: dodgeball-db
-          property: connectionString
+        sync: false # set in the dashboard to the Neon connection string
       - key: JWT_SECRET
         generateValue: true
