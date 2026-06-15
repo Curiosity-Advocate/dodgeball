@@ -16,6 +16,43 @@ To run it yourself:
 - **PostgreSQL 13+** — local, or a managed instance (Neon, Render, …). The schema
   uses `citext` and `gen_random_uuid()`, both standard on 13+.
 
+## Try it in the browser (extension)
+
+The repo ships a Chrome extension that puts a live scoreboard beside a YouTube video.
+It talks to the hosted demo out of the box, so the only thing you need is Chrome — no
+server, no database. You can use it as a **spectator** or sign in and **score**.
+
+### Install (unpacked)
+
+1. Open `chrome://extensions`.
+2. Turn on **Developer mode** (top-right).
+3. **Load unpacked** → select the [`extension/`](extension/) folder in this repo.
+4. Open any YouTube watch page (`https://www.youtube.com/watch?…`). A
+   **DodgeballPlus · Live** panel appears top-right.
+
+> After changing the extension, click the **reload ↻** on its card in
+> `chrome://extensions` — reloading the YouTube tab alone isn't enough.
+
+### Watch as a spectator
+
+The panel lists the games currently in progress, by name. Click one to open its live
+ticker — the score updates the instant events are published. (Empty list = no live
+game; start one as a scorekeeper below.)
+
+### Score as a scorekeeper
+
+1. In a game's ticker, click **Sign in to score**.
+2. Sign in with the seeded scorekeeper account:
+   - email: `scorekeeper@demo.local`
+   - password: `demo-password`
+3. Use **Start · Home +1 · Away +1 · Finalise** to publish events. The score above —
+   and every spectator watching that game — updates live.
+
+To see both roles at once, open the same game in a **second window** (or another
+browser) as a plain spectator: your scoring shows up there in real time. Sessions last
+up to 5 hours; **Sign out** ends one immediately. Scoring is limited to a match's
+assigned scorekeeper — the seeded account is assigned to the demo match.
+
 ## Run it locally
 
 ```sh
