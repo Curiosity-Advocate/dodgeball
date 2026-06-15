@@ -17,11 +17,18 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def _force_asyncpg(cls, value: str) -> str:
-        # Render injects postgres:// or postgresql://; the app and Alembic need asyncpg.
+        # Managed Postgres (Render/Neon) injects postgres:// or postgresql://; the app
+        # and Alembic need the async driver.
         if value.startswith("postgres://"):
             value = value.replace("postgres://", "postgresql://", 1)
         if value.startswith("postgresql://"):
             value = value.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # asyncpg rejects libpq-only query params (sslmode, channel_binding). When SSL
+        # is requested (e.g. Neon's ?sslmode=require) collapse the query to the single
+        # `ssl` arg asyncpg accepts; otherwise leave the URL as-is (e.g. local/CI).
+        base, sep, query = value.partition("?")
+        if sep and ("sslmode" in query or "ssl=" in query):
+            value = f"{base}?ssl=require"
         return value
 
 
