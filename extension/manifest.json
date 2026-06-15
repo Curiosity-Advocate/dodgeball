@@ -3,6 +3,7 @@
   "name": "DodgeballPlus Live",
   "version": "0.1.0",
   "description": "Live dodgeball scores beside the game on YouTube.",
+  "permissions": ["storage"],
   "host_permissions": [
     "https://dodgeball-rqt0.onrender.com/*"
   ],

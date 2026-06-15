@@ -148,3 +148,84 @@
   color: #9aa3b2;
   margin-top: 4px;
 }
+
+#dbp-panel .dbp-sk {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #2a2f3a;
+}
+
+#dbp-panel .dbp-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+#dbp-panel .dbp-actions button {
+  background: #161a22;
+  border: 1px solid #2a2f3a;
+  color: #f2f4f8;
+  border-radius: 6px;
+  padding: 7px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#dbp-panel .dbp-actions button:hover {
+  border-color: #3b82f6;
+}
+
+#dbp-panel .dbp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#dbp-panel .dbp-form input {
+  background: #0b0d11;
+  border: 1px solid #2a2f3a;
+  color: #f2f4f8;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+#dbp-panel .dbp-form button {
+  background: #1d4ed8;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 7px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#dbp-panel .dbp-form button:hover {
+  background: #2563eb;
+}
+
+#dbp-panel .dbp-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+}
+
+#dbp-panel .dbp-link:hover {
+  text-decoration: underline;
+}
+
+#dbp-panel .dbp-err {
+  color: #f87171;
+  font-size: 11px;
+  min-height: 13px;
+  margin-top: 4px;
+}
+
+#dbp-panel .dbp-who {
+  font-size: 11px;
+  color: #9aa3b2;
+  margin-top: 6px;
+}
