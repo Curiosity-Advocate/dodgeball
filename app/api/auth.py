@@ -1,7 +1,7 @@
 """Auth HTTP router: register, login, refresh, logout, me (api-contract.md)."""
 
 from fastapi import APIRouter, Depends, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.deps import get_auth_service, get_current_user, get_rate_limiter
 from app.auth.errors import RateLimited
@@ -16,12 +16,29 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class RegisterRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "email": "new.user@example.com",
+                "password": "password123",
+                "display_name": "New User",
+            }
+        }
+    )
+
     email: str
     password: str = Field(min_length=8)
     display_name: str = Field(min_length=1)
 
 
 class LoginRequest(BaseModel):
+    # The seeded demo account, so "Try it out" logs in against fresh data out of the box.
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"email": "scorekeeper@demo.local", "password": "demo-password"}
+        }
+    )
+
     email: str
     password: str
 

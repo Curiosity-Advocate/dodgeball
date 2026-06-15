@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.auth import router as auth_router
@@ -13,6 +14,13 @@ from app.core.errors import AppError
 
 def create_app() -> FastAPI:
     app = FastAPI(title="DodgeballPlus")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # v1.0: open; narrow to the client origin later
+        allow_credentials=False,  # bearer tokens, not cookies
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.include_router(health_router)
     app.include_router(auth_router)
     app.include_router(management_router)

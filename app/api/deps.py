@@ -1,6 +1,7 @@
 """Shared FastAPI dependencies."""
 
-from fastapi import Depends, Request
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.auth.assignment import AssignmentService
 from app.auth.errors import InvalidAccessToken, NotAuthorized
@@ -51,12 +52,15 @@ def get_rate_limiter() -> RateLimiter:
     return _auth_limiter
 
 
-def get_current_user(request: Request) -> AccessTokenClaims:
-    header = request.headers.get("Authorization", "")
-    scheme, _, token = header.partition(" ")
-    if scheme.lower() != "bearer" or not token:
+_bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> AccessTokenClaims:
+    if credentials is None or credentials.scheme.lower() != "bearer" or not credentials.credentials:
         raise InvalidAccessToken("missing bearer token")
-    return decode_access_token(token)
+    return decode_access_token(credentials.credentials)
 
 
 def require_admin(claims: AccessTokenClaims = Depends(get_current_user)) -> AccessTokenClaims:

@@ -1,8 +1,11 @@
 .git
+.github
 .venv
 __pycache__
 *.py[cod]
 .env
 docs
+tests
+*.md
 .pytest_cache
 .ruff_cache

@@ -8,8 +8,9 @@ run in production so deploys are reproducible and the environment is explicit.
 
 ## Services
 
-- **Web Service** — the FastAPI application, served by `uvicorn` (behind
-  `gunicorn` workers). Auto-deploys from the Git repository.
+- **Web Service** — the FastAPI application, served by a **single `uvicorn`
+  process** (one event loop, no worker fan-out). Auto-deploys from the Git
+  repository.
 - **Render Managed PostgreSQL** — version 13+, with `citext` enabled once via a
   migration. `gen_random_uuid()` is built in (no extension needed).
 
@@ -19,22 +20,50 @@ the deferred scaling lever.
 ## Build and run
 
 - A `Dockerfile` (or Render's native Python build) produces the app image.
-- The start command runs `gunicorn` with `uvicorn` workers.
+- The start command runs a **single `uvicorn` process** (not multiple workers).
+  This is a correctness constraint, not just a sizing choice: the live fan-out is an
+  in-process pub/sub singleton (ADR-0006), so a second worker is a second process
+  with its own dispatcher — an event published in one worker never reaches a
+  subscriber held by another, and it fails silently (the event is still in the log,
+  so only the live update is lost). Crossing processes is what Redis is for, and
+  that is the deferred `NFR-4` lever. Until then: one process, one event loop. The
+  load is I/O-bound (idle sockets parked on the event loop), not CPU-bound, so one
+  process comfortably covers the v1.0 target.
 - `DATABASE_URL` is injected from the Render PostgreSQL instance; other settings come
   from dashboard environment variables.
 
 ## Migrations
 
-Database migrations run on deploy via a release / pre-deploy command, so the schema
-is applied before new application code serves traffic.
+Migrations run from the container entrypoint (`docker-entrypoint.sh`): on start it
+runs `alembic upgrade head`, then the idempotent `app.seed`, then execs `uvicorn`.
+This is safe to run on every start because there is a single instance (no migration
+race) and both steps are idempotent. The app only begins serving once the schema is
+applied.
 
 ## Configuration
 
-Environment variables are set in the Render dashboard and never committed:
+Configuration is declared in `render.yaml` (a Render Blueprint); secrets are never
+committed:
 
-- `DATABASE_URL` — from the Render PostgreSQL instance.
-- `JWT_SECRET` — access-token signing key.
-- `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL` — token lifetimes.
+- `DATABASE_URL` — auto-wired from the Render PostgreSQL instance. Render injects it
+  as `postgres://…`; `app/core/config.py` normalizes the scheme to
+  `postgresql+asyncpg://…` (the async driver the app and Alembic require).
+- `JWT_SECRET` — generated per service by Render (`generateValue`), so a real signing
+  key exists in production without committing one.
+- `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL` — token lifetimes; default in config,
+  overridable in the dashboard.
+
+## API docs & CORS
+
+FastAPI serves interactive API docs with no extra code: **Swagger UI at `/docs`** and
+**ReDoc at `/redoc`**. With the demo seed always present, these are a live, clickable
+reference. A bearer security scheme is declared so `/docs` has an **Authorize** button
+for the write endpoints.
+
+CORS is open in v1.0 (`allow_origins=["*"]`, no credentials): the API authenticates
+with a bearer token in the `Authorization` header rather than cookies, so there is no
+ambient credential for a cross-origin page to abuse. It is narrowed to specific client
+origins once a browser client (e.g. the live-game overlay) ships.
 
 ## Durability
 

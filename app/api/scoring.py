@@ -3,7 +3,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Response, status
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.api.deps import get_scoring_service, require_match_writer
 from app.auth.tokens import AccessTokenClaims
@@ -14,6 +14,16 @@ router = APIRouter(tags=["scoring"])
 
 
 class PostEventRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "type": "round_won_home",
+                "payload": {},
+                "idempotency_key": "11111111-1111-1111-1111-111111111111",
+            }
+        }
+    )
+
     type: Literal[
         "match_started",
         "round_won_home",
